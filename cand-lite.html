@@ -579,7 +579,7 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD + DIRECT RESET ON STOP
+   COMPACT HUD + PERSISTENT CAFFEINE WAKE ENGINE
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
@@ -588,8 +588,8 @@ const hudTemplateMarkup = `
       <div class="chrono-controls">
         <button id="chronoMainAction" class="hud-btn run">Start ▶</button>
         <button id="chronoSnapAction" class="hud-btn snap" title="التقاط الشاشة">📸</button>
-        <button id="chronoAwakeAction" class="hud-btn awake" title="منع الجهاز من النوم (Caffeine Mode)">☕ Awake</button>
-        <button id="chronoGear" class="hud-btn">⚙️</button>
+        <button id="chronoAwakeAction" class="hud-btn awake" title="منع الجهاز من النوم (Caffeine Mode)">☕</button>
+        <button id="chronoGear" class="hud-btn gear" title="إعداد الاختصارات">⚙️</button>
       </div>
     </div>
     <div id="configView" class="config-view">
@@ -631,11 +631,10 @@ const hudStyles = `
     font-size: 22px; 
     font-weight: 700; 
     color: #00e5ff; 
-    cursor: pointer;
+    cursor: pointer; 
     line-height: 1;
     padding: 2px 4px;
     border-radius: 4px;
-    transition: background 0.15s;
   }
   .chrono-digits:hover { background: rgba(0, 229, 255, 0.1); }
   .chrono-digits.alert { color: #ff0055; animation: blinker 0.6s infinite alternate; }
@@ -646,22 +645,37 @@ const hudStyles = `
     border: none; 
     background: #162030; 
     color: #fff; 
-    font-size: 10.5px; 
+    font-size: 11px; 
     font-weight: 700; 
     padding: 4px 7px; 
     border-radius: 5px; 
     cursor: pointer; 
     transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .hud-btn.run { background: #00ffaa; color: #021a11; }
   .hud-btn.halt { background: #ff0055; color: #fff; }
   .hud-btn.snap { background: #3b82f6; }
-  .hud-btn.awake { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+  .hud-btn.awake { 
+    background: #162030; 
+    color: #94a3b8; 
+    width: 26px; 
+    height: 24px; 
+    padding: 0; 
+    font-size: 13px;
+  }
+  .hud-btn.gear {
+    background: #162030; 
+    width: 24px; 
+    height: 24px; 
+    padding: 0; 
+    font-size: 12px;
+  }
   .hud-btn.awake.active { 
     background: #ff9800; 
-    color: #000; 
-    border-color: #ff9800; 
-    box-shadow: 0 0 10px rgba(255, 152, 0, 0.4); 
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.5); 
   }
 
   .config-view { display: none; background: #080b12; border: 1px solid #1a2536; border-radius: 6px; padding: 4px 6px; margin-top: 4px; font-size: 10.5px; }
@@ -688,7 +702,7 @@ dockModeBtn.addEventListener('click', async ()=>{
   if ('documentPictureInPicture' in window) {
     try {
       const pipWin = await window.documentPictureInPicture.requestWindow({
-        width: 320,
+        width: 300,
         height: 420,
       });
 
@@ -731,39 +745,76 @@ function initHudEngine(win){
   let hudDebounce = null;
   let targetDirHandle = null;
 
-  /* Caffeine Mode */
+  /* Caffeine Mode - مانع سكون دائم ومستمر حتى عند تغيير التاب */
+  let isAwakeActive = false;
   let wakeLockSentinel = null;
+  let silentAudio = null;
+
+  function createSilentAudio(){
+    try {
+      const audioCtx = new (win.AudioContext || win.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.00001; // صوت صامت تماماً
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      return audioCtx;
+    } catch(e){
+      return null;
+    }
+  }
+
+  async function requestWakeLockSafely(){
+    if(!isAwakeActive) return;
+    try {
+      if('wakeLock' in navigator){
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+        wakeLockSentinel.addEventListener('release', ()=>{
+          wakeLockSentinel = null;
+          if(isAwakeActive){
+            // إعادة التفعيل فوراً عند عودة الصفحة للعمل
+            setTimeout(requestWakeLockSafely, 1000);
+          }
+        });
+      }
+    } catch(err){}
+  }
 
   async function toggleAwakeMode(){
-    if('wakeLock' in navigator){
-      if(!wakeLockSentinel){
-        try {
-          wakeLockSentinel = await navigator.wakeLock.request('screen');
-          chronoAwakeAction.classList.add('active');
-          triggerHudToast('☕ Caffeine: الجهاز لن ينام');
-          
-          wakeLockSentinel.addEventListener('release', ()=>{
-            wakeLockSentinel = null;
-            chronoAwakeAction.classList.remove('active');
-          });
-        } catch(err){
-          triggerHudToast('تعذر تفعيل وضع النشاط ❌');
-        }
-      } else {
-        await wakeLockSentinel.release();
-        wakeLockSentinel = null;
-        chronoAwakeAction.classList.remove('active');
-        triggerHudToast('تم تعطيل Caffeine 💤');
-      }
+    isAwakeActive = !isAwakeActive;
+    if(isAwakeActive){
+      chronoAwakeAction.classList.add('active');
+      triggerHudToast('☕ Caffeine مفعّل: الجهاز لن ينام');
+      await requestWakeLockSafely();
+      if(!silentAudio) silentAudio = createSilentAudio();
     } else {
-      triggerHudToast('المتصفح لا يدعم خاصية WakeLock ⚠️');
+      chronoAwakeAction.classList.remove('active');
+      triggerHudToast('تم إيقاف Caffeine 💤');
+      if(wakeLockSentinel){
+        try { await wakeLockSentinel.release(); } catch(e){}
+        wakeLockSentinel = null;
+      }
+      if(silentAudio){
+        try { silentAudio.close(); } catch(e){}
+        silentAudio = null;
+      }
     }
   }
 
   chronoAwakeAction.addEventListener('click', toggleAwakeMode);
 
+  // إعادة التفعيل المستمر إذا فُصل أثناء تغيير التاب
+  win.document.addEventListener('visibilitychange', ()=>{
+    if(isAwakeActive && win.document.visibilityState === 'visible'){
+      requestWakeLockSafely();
+    }
+  });
+
   win.addEventListener('unload', ()=>{
+    isAwakeActive = false;
     if(wakeLockSentinel) wakeLockSentinel.release();
+    if(silentAudio) silentAudio.close();
   });
 
   function formatKeyLabel(code){
@@ -807,7 +858,7 @@ function initHudEngine(win){
   function startChrono(){
     if(isTicking) return;
     isTicking = true;
-    chronoMainAction.innerText = 'إيقاف وتصفير ⏹';
+    chronoMainAction.innerText = 'تصفير ⏹';
     chronoMainAction.className = 'hud-btn halt';
     lastTimestamp = performance.now();
     tickRef = win.setInterval(()=>{
@@ -833,7 +884,6 @@ function initHudEngine(win){
     renderClock();
   }
 
-  // التعديل: عند الإيقاف يتم التصفير مباشرة دون استئناف
   function toggleChrono(){
     if(isTicking){
       resetChrono();
