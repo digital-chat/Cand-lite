@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canned Lite V2 • By Geek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #06080d;
+    --bg-surface: #0c1017;
+    --bg-elevated: #131924;
+    --bg-hover: #1b2332;
+    --accent-primary: #00ffaa;
+    --accent-glow: rgba(0, 255, 170, 0.25);
+    --accent-secondary: #ff0055;
+    --accent-cyan: #00e5ff;
+    --accent-amber: #ffaa00;
+    --text-main: #f1f5f9;
+    --text-muted: #64748b;
+    --text-sub: #94a3b8;
+    --border: #1e293b;
+    --border-active: #334155;
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --font-code: 'Fira Code', monospace;
+    --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    padding: 24px 16px;
+    min-height: 100vh;
+    background-image: 
+      radial-gradient(circle at 15% 10%, rgba(0, 255, 170, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(255, 0, 85, 0.03) 0%, transparent 40%);
+  }
+
+  .shell { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Top Deck */
+  .deck-header {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .deck-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan), var(--accent-secondary));
+  }
+  .brand-group { display: flex; align-items: center; gap: 14px; }
+  .brand-chip {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-active);
+    color: var(--accent-primary);
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 12px var(--accent-glow);
+    letter-spacing: 0.5px;
+  }
+  .brand-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .brand-title span { color: var(--accent-cyan); }
+  .brand-by { font-size: 11px; color: var(--text-muted); font-family: var(--font-code); margin-top: 2px; }
+
+  /* Control Bay */
+  .control-bay {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 18px;
+  }
+  .bay-left, .bay-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .geek-btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.18s ease;
+    user-select: none;
+    text-decoration: none;
+  }
+  .geek-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-active);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .geek-btn:active { transform: translateY(0); }
+  .geek-btn.primary {
+    background: var(--accent-primary);
+    color: #03150d;
+    border-color: var(--accent-primary);
+    font-weight: 700;
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+  .geek-btn.primary:hover { background: #1affb2; color: #000; }
+  .geek-btn.danger:hover { background: rgba(255, 0, 85, 0.15); border-color: var(--accent-secondary); color: var(--accent-secondary); }
+  .geek-btn.active-state {
+    background: rgba(0, 255, 170, 0.1);
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+  .geek-btn.amber-active {
+    background: rgba(255, 170, 0, 0.12);
+    color: var(--accent-amber);
+    border-color: var(--accent-amber);
+  }
+
+  /* Search & Scope Station */
+  .search-station {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 16px;
+  }
+  .station-select {
+    background: var(--bg-elevated);
+    color: var(--text-sub);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+  }
+  .station-select:focus { border-color: var(--accent-cyan); color: #fff; }
+  
+  .input-wrapper { position: relative; width: 100%; }
+  .station-input {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 11px 40px 11px 40px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .station-input:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.15);
+  }
+  .input-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 14px;
+    pointer-events: none;
+    font-family: var(--font-code);
+  }
+  .input-clear {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    border-radius: 4px;
+    display: none;
+  }
+  .input-clear:hover { color: #fff; }
+
+  .stat-counter {
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    display: flex;
+    gap: 12px;
+  }
+  .stat-counter b { color: var(--accent-cyan); }
+
+  /* Data Board */
+  .data-board { display: flex; flex-direction: column; gap: 10px; }
+  .canned-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: 180px 1fr auto;
+    gap: 20px;
+    align-items: center;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .canned-card:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-active);
+    transform: translateX(-3px);
+  }
+  .canned-card.flash {
+    animation: flashBorder 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes flashBorder {
+    0% { border-color: var(--accent-primary); box-shadow: 0 0 20px var(--accent-glow); }
+    100% { border-color: var(--border); box-shadow: none; }
+  }
+
+  .card-trigger { display: flex; align-items: center; gap: 10px; }
+  .trigger-badge {
+    background: rgba(0, 229, 255, 0.08);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+  }
+
+  .card-body {
+    font-size: 13.5px;
+    color: var(--text-sub);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .card-actions { display: flex; align-items: center; gap: 6px; }
+  .action-btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13px;
+  }
+  .action-btn:hover { color: #fff; border-color: var(--border-active); background: var(--bg-hover); }
+  .action-btn.copy-act:hover { color: var(--accent-primary); border-color: var(--accent-primary); }
+  .action-btn.del-act:hover { color: var(--accent-secondary); border-color: var(--accent-secondary); }
+  .action-btn.fav-act.active { color: var(--accent-secondary); border-color: var(--accent-secondary); background: rgba(255, 0, 85, 0.1); }
+
+  /* Toast Notification */
+  .toast-banner {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    background: #000;
+    border: 1px solid var(--accent-primary);
+    box-shadow: 0 8px 30px rgba(0, 255, 170, 0.25);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(100px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 99999;
+  }
+  .toast-banner.visible { transform: translateY(0); opacity: 1; }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-primary); box-shadow: 0 0 8px var(--accent-primary); }
+
+  /* Dropdown Menu */
+  .dropdown-wrap { position: relative; }
+  .pop-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-active);
+    border-radius: var(--radius-md);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 170px;
+    z-index: 50;
+  }
+  .pop-menu.show { display: flex; }
+  .pop-item {
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    padding: 8px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: right;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-main);
+  }
+  .pop-item:hover { background: var(--bg-elevated); color: #fff; }
+
+  /* In-Page Smart Docked Widget (نافذة سمارت مدمجة داخل الصفحة بدون إطارات إطلاقاً) */
+  #inPageDock {
+    display: none;
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    width: 320px;
+    height: 480px;
+    background: #06080d;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.85);
+    z-index: 9999;
+    flex-direction: column;
+    padding: 8px;
+    backdrop-filter: blur(10px);
+  }
+  #inPageDock.active { display: flex; }
+  .dock-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 4px 6px;
+    border-bottom: 1px solid #141c2b;
+    margin-bottom: 6px;
+    cursor: grab;
+  }
+  .dock-top-title { font-size: 11.5px; font-weight: 700; color: #00ffaa; font-family: var(--font-code); }
+  .dock-close { background: transparent; border: none; color: #64748b; font-size: 14px; cursor: pointer; }
+  .dock-close:hover { color: #ff0055; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Top Deck -->
+  <header class="deck-header">
+    <div class="brand-group">
+      <span class="brand-chip">&lt;/&gt; V2.0</span>
+      <div>
+        <h1 class="brand-title">Canned Lite <span>V2</span></h1>
+        <div class="brand-by">Engineered By Geek • Fast Phrase Engine</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button id="inPageDockBtn" class="geek-btn" title="تفتح نافذة سمارت مدمجة داخل الصفحة بدون أي إطار خارجي نهائياً">📱 وضع عائم مدمج</button>
+      <button id="dockModeBtn" class="geek-btn primary" title="فتح نافذة خارجية">📌 وضع عائم خارجي</button>
+    </div>
+  </header>
+
+  <!-- Control Bay -->
+  <nav class="control-bay">
+    <div class="bay-left">
+      <button id="toggleAutoBtn" class="geek-btn active-state">⚡ Auto-Copy: نشط</button>
+      <button id="toggleFavFilter" class="geek-btn">❤️ المفضلة فقط</button>
+      <button id="createSnippetBtn" class="geek-btn">➕ إضافة اختصار</button>
+    </div>
+    <div class="bay-right">
+      <label for="excelUpload" class="geek-btn" style="cursor:pointer">📂 Import Excel</label>
+      <input id="excelUpload" type="file" accept=".xlsx,.xls" style="display:none">
+
+      <label for="jsonUpload" class="geek-btn" style="cursor:pointer">⚡ Import Backup</label>
+      <input id="jsonUpload" type="file" accept=".btbackup,.json" style="display:none">
+
+      <div class="dropdown-wrap">
+        <button id="exportDropBtn" class="geek-btn">📦 Export ▾</button>
+        <div id="exportDropMenu" class="pop-menu">
+          <button class="pop-item" data-act="html">💾 حفظ كملف HTML</button>
+          <button class="pop-item" data-act="csv">📑 حفظ كملف CSV</button>
+          <button class="pop-item" data-act="favs">❤️ تصدير المفضلة فقط</button>
+        </div>
+      </div>
+
+      <button id="wipeAllBtn" class="geek-btn danger">🗑️ مسح الكل</button>
+    </div>
+  </nav>
+
+  <!-- Search & Filter Station -->
+  <section class="search-station">
+    <select id="queryScope" class="station-select">
+      <option value="all">كل الحقول (Trigger + Text)</option>
+      <option value="keyword">Trigger فقط</option>
+      <option value="text">العبارة فقط</option>
+    </select>
+
+    <div class="input-wrapper">
+      <span class="input-icon">#_</span>
+      <input id="queryInput" class="station-input" placeholder="بحث ب أختصار الكاند..." autocomplete="off" />
+      <button id="queryReset" class="input-clear">✕</button>
+    </div>
+
+    <div class="stat-counter">
+      <span>العبارات: <b id="statTotal">0</b></span>
+      <span>المفضلة: <b id="statFavs">0</b></span>
+    </div>
+  </section>
+
+  <!-- Data Stream -->
+  <main id="cannedGrid" class="data-board"></main>
+</div>
+
+<!-- Floating In-Page Dock (بدون إطار تماماً) -->
+<div id="inPageDock">
+  <div class="dock-top-bar" id="dockDragHandle">
+    <span class="dock-top-title">⚡ Canned HUD</span>
+    <button class="dock-close" id="dockCloseBtn">✕</button>
+  </div>
+  <iframe id="dockFrame" style="width:100%; height:100%; border:none; background:transparent;"></iframe>
+</div>
+
+<!-- Floating Notification -->
+<div id="globalToast" class="toast-banner">
+  <span class="toast-dot"></span>
+  <span id="toastMessage">عملية ناجحة</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+let CANNED_STORE = JSON.parse(localStorage.getItem('canned_v2_data') || '[]').map(item => ({
+  keyword: (item.keyword || item.code || '').trim(),
+  text: (item.text || item.snippet || '').trim()
+}));
+
+if(!CANNED_STORE.length && localStorage.getItem('phrases_data')){
+  try {
+    CANNED_STORE = JSON.parse(localStorage.getItem('phrases_data')).map(p => ({
+      keyword: (p.keyword || p.code || '').trim(),
+      text: (p.text || '').trim()
+    }));
+  } catch(e){}
+}
+
+let FAV_KEYS = JSON.parse(localStorage.getItem('canned_v2_favs') || '[]');
+let AUTO_COPY_ACTIVE = localStorage.getItem('canned_v2_autocopy') !== 'false';
+let TIMER_BINDINGS = JSON.parse(localStorage.getItem('canned_v2_keys') || '{"start":"Space","reset":"KeyR"}');
+let ONLY_FAV_FILTER = false;
+let globalDebounce = null;
+
+const cannedGrid = document.getElementById('cannedGrid');
+const queryInput = document.getElementById('queryInput');
+const queryScope = document.getElementById('queryScope');
+const queryReset = document.getElementById('queryReset');
+const statTotal = document.getElementById('statTotal');
+const statFavs = document.getElementById('statFavs');
+const toggleAutoBtn = document.getElementById('toggleAutoBtn');
+const toggleFavFilter = document.getElementById('toggleFavFilter');
+const createSnippetBtn = document.getElementById('createSnippetBtn');
+const dockModeBtn = document.getElementById('dockModeBtn');
+const inPageDockBtn = document.getElementById('inPageDockBtn');
+const inPageDock = document.getElementById('inPageDock');
+const dockCloseBtn = document.getElementById('dockCloseBtn');
+const dockFrame = document.getElementById('dockFrame');
+const exportDropBtn = document.getElementById('exportDropBtn');
+const exportDropMenu = document.getElementById('exportDropMenu');
+const globalToast = document.getElementById('globalToast');
+const toastMessage = document.getElementById('toastMessage');
+
+function syncStorage(){
+  localStorage.setItem('canned_v2_data', JSON.stringify(CANNED_STORE));
+  localStorage.setItem('canned_v2_favs', JSON.stringify(FAV_KEYS));
+  localStorage.setItem('canned_v2_autocopy', AUTO_COPY_ACTIVE);
+  localStorage.setItem('canned_v2_keys', JSON.stringify(TIMER_BINDINGS));
+}
+
+function flashToast(msg){
+  toastMessage.innerText = msg;
+  globalToast.classList.add('visible');
+  setTimeout(() => globalToast.classList.remove('visible'), 2000);
+}
+
+function updateAutoCopyButtonState(){
+  if(AUTO_COPY_ACTIVE){
+    toggleAutoBtn.className = 'geek-btn active-state';
+    toggleAutoBtn.innerHTML = '⚡ Auto-Copy: نشط';
+  } else {
+    toggleAutoBtn.className = 'geek-btn';
+    toggleAutoBtn.innerHTML = '⚡ Auto-Copy: معطل';
+  }
+}
+updateAutoCopyButtonState();
+
+toggleAutoBtn.addEventListener('click', ()=>{
+  AUTO_COPY_ACTIVE = !AUTO_COPY_ACTIVE;
+  updateAutoCopyButtonState();
+  syncStorage();
+  flashToast(AUTO_COPY_ACTIVE ? 'تم تفعيل النسخ التلقائي الذكي ⚡' : 'تم تعطيل النسخ التلقائي');
+});
+
+async function copyPayload(content, cardElement, label){
+  try {
+    await navigator.clipboard.writeText(content);
+    flashToast(label || 'تم النسخ بنجاح');
+    if(cardElement) {
+      cardElement.classList.add('flash');
+      setTimeout(()=> cardElement.classList.remove('flash'), 700);
+    }
+  } catch(e) {
+    const area = document.createElement('textarea');
+    area.value = content;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    document.body.removeChild(area);
+    flashToast(label || 'تم النسخ بنجاح');
+  }
+}
+
+function refreshDisplay(dataset){
+  cannedGrid.innerHTML = '';
+  dataset.forEach(entry => {
+    const isSaved = FAV_KEYS.includes(entry.keyword);
+    const card = document.createElement('div');
+    card.className = 'canned-card';
+    card.innerHTML = `
+      <div class="card-trigger">
+        <span class="trigger-badge"># ${escapeEntities(entry.keyword)}</span>
+      </div>
+      <div class="card-body">${escapeEntities(entry.text)}</div>
+      <div class="card-actions">
+        <button class="action-btn copy-act" title="نسخ">📋</button>
+        <button class="action-btn mod-act" title="تعديل">✏️</button>
+        <button class="action-btn fav-act ${isSaved ? 'active' : ''}" title="المفضلة">${isSaved ? '❤️' : '🤍'}</button>
+        <button class="action-btn del-act" title="حذف">🗑️</button>
+      </div>
+    `;
+
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.card-actions')) return;
+      copyPayload(entry.text, card, `تم نسخ: ${entry.keyword}`);
+    });
+
+    const copyBtn = card.querySelector('.copy-act');
+    const modBtn = card.querySelector('.mod-act');
+    const favBtn = card.querySelector('.fav-act');
+    const delBtn = card.querySelector('.del-act');
+
+    copyBtn.addEventListener('click', ()=> copyPayload(entry.text, card, `تم نسخ: ${entry.keyword}`));
+    favBtn.addEventListener('click', ()=> toggleFavorite(entry.keyword));
+    modBtn.addEventListener('click', ()=> modifySnippet(entry));
+    delBtn.addEventListener('click', ()=> removeSnippet(entry.keyword));
+
+    cannedGrid.appendChild(card);
+  });
+
+  statTotal.innerText = CANNED_STORE.length;
+  statFavs.innerText = FAV_KEYS.length;
+}
+
+function escapeEntities(str){
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function toggleFavorite(key){
+  const idx = FAV_KEYS.indexOf(key);
+  if(idx > -1) {
+    FAV_KEYS.splice(idx, 1);
+    flashToast('تم الإزالة من المفضلة');
+  } else {
+    FAV_KEYS.push(key);
+    flashToast('أضيف إلى المفضلة ❤️');
+  }
+  syncStorage();
+  runFilter();
+}
+
+toggleFavFilter.addEventListener('click', ()=>{
+  ONLY_FAV_FILTER = !ONLY_FAV_FILTER;
+  toggleFavFilter.classList.toggle('amber-active', ONLY_FAV_FILTER);
+  runFilter();
+});
+
+function modifySnippet(entry){
+  const newTrigger = prompt('تعديل مفتاح الاختصار (Trigger):', entry.keyword);
+  if(newTrigger === null) return;
+  const newText = prompt('تعديل النص المنسوخ:', entry.text);
+  if(newText === null) return;
+  
+  if(!newTrigger.trim() || !newText.trim()){
+    flashToast('لا يمكن ترك الحقول فارغة ⚠️');
+    return;
+  }
+
+  const cleanTrigger = newTrigger.trim();
+  if(cleanTrigger !== entry.keyword && CANNED_STORE.some(i => i.keyword.toLowerCase() === cleanTrigger.toLowerCase())){
+    flashToast('هذا الاختصار مسجل بالفعل ⚠️');
+    return;
+  }
+
+  CANNED_STORE = CANNED_STORE.map(i => i.keyword === entry.keyword ? { keyword: cleanTrigger, text: newText.trim() } : i);
+  if(FAV_KEYS.includes(entry.keyword)){
+    FAV_KEYS = FAV_KEYS.filter(k => k !== entry.keyword);
+    FAV_KEYS.push(cleanTrigger);
+  }
+  syncStorage();
+  runFilter();
+  flashToast('تم تحديث العبارة ✅');
+}
+
+function removeSnippet(key){
+  if(!confirm(`هل أنت متأكد من حذف [${key}]؟`)) return;
+  CANNED_STORE = CANNED_STORE.filter(i => i.keyword !== key);
+  FAV_KEYS = FAV_KEYS.filter(k => k !== key);
+  syncStorage();
+  runFilter();
+  flashToast('تم الحذف');
+}
+
+createSnippetBtn.addEventListener('click', ()=>{
+  const kw = prompt('اكتب مفتاح الاختصار الجديد (Keyword):');
+  if(!kw || !kw.trim()) return;
+  const txt = prompt('اكتب العبارة أو النص الكامل:');
+  if(!txt || !txt.trim()) return;
+
+  if(CANNED_STORE.some(i => i.keyword.toLowerCase() === kw.trim().toLowerCase())){
+    flashToast('الاختصار مكرر! يرجى اختيار كلمة أخرى');
+    return;
+  }
+
+  CANNED_STORE.unshift({ keyword: kw.trim(), text: txt.trim() });
+  syncStorage();
+  runFilter();
+  flashToast('تمت إضافة العبارة بنجاح ⚡');
+});
+
+function runFilter(){
+  if(globalDebounce) clearTimeout(globalDebounce);
+
+  const rawVal = queryInput.value.trim().toLowerCase();
+  const scope = queryScope.value;
+  queryReset.style.display = rawVal.length ? 'block' : 'none';
+
+  let workingSet = CANNED_STORE;
+  if(ONLY_FAV_FILTER){
+    workingSet = workingSet.filter(i => FAV_KEYS.includes(i.keyword));
+  }
+
+  if(rawVal.length){
+    if(AUTO_COPY_ACTIVE){
+      globalDebounce = setTimeout(()=>{
+        const match = workingSet.find(i => i.keyword.toLowerCase() === rawVal);
+        if(match){
+          copyPayload(match.text, null, `⚡ تم النسخ التلقائي: ${match.keyword}`);
+          queryInput.select();
+        }
+      }, 500);
+    }
+
+    workingSet = workingSet.filter(i => {
+      const matchKey = i.keyword.toLowerCase().includes(rawVal);
+      const matchText = i.text.toLowerCase().includes(rawVal);
+      if(scope === 'keyword') return matchKey;
+      if(scope === 'text') return matchText;
+      return matchKey || matchText;
+    });
+  }
+
+  refreshDisplay(workingSet);
+}
+
+queryInput.addEventListener('input', runFilter);
+queryScope.addEventListener('change', runFilter);
+
+queryInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    const rawVal = queryInput.value.trim().toLowerCase();
+    const match = CANNED_STORE.find(i => i.keyword.toLowerCase() === rawVal);
+    if(match){
+      if(globalDebounce) clearTimeout(globalDebounce);
+      copyPayload(match.text, null, `⚡ تم النسخ المباشر: ${match.keyword}`);
+      queryInput.select();
+    }
+  }
+});
+
+queryReset.addEventListener('click', ()=>{
+  if(globalDebounce) clearTimeout(globalDebounce);
+  queryInput.value = '';
+  runFilter();
+  queryInput.focus();
+});
+
+/* Excel & Backup Handlers */
+document.getElementById('excelUpload').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try {
+      const workbook = XLSX.read(evt.target.result, { type: 'binary' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      let added = 0;
+      rows.forEach(r => {
+        const keys = Object.keys(r);
+        const kField = keys.find(k => k.toLowerCase() === 'keyword' || k.toLowerCase() === 'code');
+        const tField = keys.find(k => k.toLowerCase() === 'text' || k.toLowerCase() === 'phrase' || k.toLowerCase() === 'snippet');
+        const kw = kField ? String(r[kField]).trim() : '';
+        const txt = tField ? String(r[tField]).trim() : '';
+        if(kw && txt && !CANNED_STORE.some(x => x.keyword.toLowerCase() === kw.toLowerCase())){
+          CANNED_STORE.push({ keyword: kw, text: txt });
+          added++;
+        }
+      });
+      syncStorage();
+      runFilter();
+      flashToast(`تم استيراد ${added} عنصر من Excel ✅`);
+      e.target.value = '';
+    } catch(err) {
+      flashToast('فشل قراءة ملف Excel ❌');
+    }
+  };
+  reader.readAsBinaryString(file);
+});
+
+document.getElementById('jsonUpload').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try {
+      const parsed = JSON.parse(evt.target.result);
+      const dataset = parsed.combos || (Array.isArray(parsed) ? parsed : []);
+      let added = 0;
+      dataset.forEach(entry => {
+        const kw = (entry.keyword || entry.code || '').trim();
+        const txt = (entry.snippet || entry.text || '').trim();
+        if(kw && txt && !CANNED_STORE.some(x => x.keyword.toLowerCase() === kw.toLowerCase())){
+          CANNED_STORE.push({ keyword: kw, text: txt });
+          added++;
+        }
+      });
+      syncStorage();
+      runFilter();
+      flashToast(`تم تحميل الباك اب (${added} عنصر جديد) ⚡`);
+      e.target.value = '';
+    } catch(err) {
+      flashToast('ملف الباك اب غير صالح ❌');
+    }
+  };
+  reader.readAsText(file);
+});
+
+/* Export Suite */
+exportDropBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  exportDropMenu.classList.toggle('show');
+});
+document.addEventListener('click', ()=> exportDropMenu.classList.remove('show'));
+
+exportDropMenu.addEventListener('click', (e)=>{
+  const act = e.target.dataset.act;
+  if(!act) return;
+
+  if(act === 'html'){
+    const pageHtml = document.documentElement.outerHTML;
+    triggerDownload(pageHtml, 'Canned_Lite_V2_Geek.html', 'text/html');
+    flashToast('تم حفظ الصفحة كـ HTML');
+  } else if(act === 'csv'){
+    if(!CANNED_STORE.length) return flashToast('لا توجد بيانات لتصديرها');
+    const lines = ['keyword,text'];
+    CANNED_STORE.forEach(i => lines.push(`"${i.keyword.replace(/"/g, '""')}","${i.text.replace(/"/g, '""').replace(/\n/g, '\\n')}"`));
+    triggerDownload(lines.join('\n'), 'Canned_Lite_Export.csv', 'text/csv');
+    flashToast('تم تصدير ملف CSV');
+  } else if(act === 'favs'){
+    const favDataset = CANNED_STORE.filter(i => FAV_KEYS.includes(i.keyword));
+    if(!favDataset.length) return flashToast('قائمة المفضلة فارغة');
+    const lines = ['keyword,text'];
+    favDataset.forEach(i => lines.push(`"${i.keyword.replace(/"/g, '""')}","${i.text.replace(/"/g, '""').replace(/\n/g, '\\n')}"`));
+    triggerDownload(lines.join('\n'), 'Canned_Favs_Export.csv', 'text/csv');
+    flashToast('تم تصدير المفضلة بنجاح');
+  }
+});
+
+function triggerDownload(content, filename, mime){
+  const blob = new Blob([content], { type: mime });
+  const anchor = document.createElement('a');
+  anchor.href = URL.createObjectURL(blob);
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(anchor.href);
+}
+
+document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
+  if(!CANNED_STORE.length) return flashToast('لا يوجد شيء لمسحه');
+  if(!confirm('تحذير: هل أنت متأكد من مسح جميع الاختصارات؟')) return;
+  CANNED_STORE = [];
+  FAV_KEYS = [];
+  syncStorage();
+  runFilter();
+  flashToast('تم مسح جميع البيانات');
+});
+
+/* كود قالب الـ HUD الموحد */
+const getHudTemplate = () => `
+  <!DOCTYPE html>
+  <html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <title>Canned HUD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@600;700&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      ::-webkit-scrollbar { width: 3px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+      
+      html, body {
+        background: #06080d;
+        color: #e2e8f0;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        padding: 4px;
+        user-select: none;
+        overflow-x: hidden;
+        width: 100%;
+        height: 100%;
+      }
+
+      .chrono-box {
+        background: #0d121c;
+        border: 1px solid #192333;
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+      }
+      .chrono-row { display: flex; justify-content: space-between; align-items: center; }
+      .chrono-digits {
+        font-family: 'Fira Code', monospace;
+        font-size: 26px;
+        font-weight: 700;
+        color: #00e5ff;
+        text-shadow: 0 0 14px rgba(0,229,255,0.3);
+      }
+      .chrono-digits.alert { color: #ff0055; text-shadow: 0 0 14px rgba(255,0,85,0.5); animation: blinker 0.6s infinite alternate; }
+      @keyframes blinker { from { opacity: 1; } to { opacity: 0.6; } }
+
+      .chrono-controls { display: flex; gap: 5px; align-items: center; }
+      .hud-btn {
+        border: none;
+        background: #162030;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .hud-btn:hover { opacity: 0.9; }
+      .hud-btn.run { background: #00ffaa; color: #021a11; }
+      .hud-btn.halt { background: #ff0055; color: #fff; }
+      .hud-btn.snap { background: #3b82f6; color: #fff; }
+
+      .chrono-modes { display: flex; gap: 5px; margin-top: 6px; }
+      .mode-pill {
+        flex: 1;
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 5px;
+        border-radius: 6px;
+        border: 1px solid #1a2536;
+        background: transparent;
+        color: #64748b;
+        cursor: pointer;
+        text-align: center;
+      }
+      .mode-pill.active { background: rgba(0, 229, 255, 0.12); color: #00e5ff; border-color: #00e5ff; }
+
+      .config-view {
+        display: none;
+        background: #080b12;
+        border: 1px solid #1a2536;
+        border-radius: 6px;
+        padding: 8px;
+        margin-top: 6px;
+        font-size: 11px;
+      }
+      .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .key-slot {
+        background: #141c28;
+        border: 1px solid #00e5ff;
+        color: #00e5ff;
+        font-family: 'Fira Code', monospace;
+        font-size: 10.5px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: center;
+        min-width: 75px;
+      }
+
+      .hud-input-bar {
+        display: flex;
+        gap: 6px;
+        position: sticky;
+        top: 0;
+        background: #06080d;
+        padding-bottom: 6px;
+        z-index: 20;
+      }
+      .hud-search {
+        flex: 1;
+        background: #0d121c;
+        border: 1px solid #192333;
+        border-radius: 8px;
+        color: #fff;
+        padding: 8px 10px;
+        font-size: 12.5px;
+        outline: none;
+        direction: rtl;
+      }
+      .hud-search:focus { border-color: #00e5ff; }
+      .hud-autotag {
+        background: #00ffaa;
+        color: #021a11;
+        font-size: 10px;
+        font-weight: 800;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+      .hud-autotag.off { background: #1e293b; color: #64748b; }
+
+      .hud-stream { display: flex; flex-direction: column; gap: 5px; max-height: 360px; overflow-y: auto; }
+      .hud-item {
+        background: #0d121c;
+        border: 1px solid #162030;
+        border-radius: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .hud-item:hover { background: #131a28; transform: translateX(-2px); }
+      .item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+      .item-kw { color: #00ffaa; font-family: 'Fira Code', monospace; font-size: 11.5px; font-weight: 700; }
+      .item-clip { background: #00e5ff; color: #000; border: none; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 2px 7px; cursor: pointer; }
+      .item-snippet { color: #94a3b8; font-size: 11.5px; line-height: 1.4; white-space: pre-wrap; overflow: hidden; text-overflow: ellipsis; max-height: 38px; }
+
+      .hud-toast {
+        position: fixed;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #000;
+        border: 1px solid #00ffaa;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 20px;
+        display: none;
+        z-index: 1000;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chrono-box">
+      <div class="chrono-row">
+        <div id="chronoDigits" class="chrono-digits">00:00</div>
+        <div class="chrono-controls">
+          <button id="chronoMainAction" class="hud-btn run">Start ▶</button>
+          <button id="chronoSnapAction" class="hud-btn snap" title="التقاط الشاشة وحفظها">📸</button>
+          <button id="chronoGear" class="hud-btn">⚙️</button>
+        </div>
+      </div>
+
+      <div id="configView" class="config-view">
+        <div class="config-row">
+          <span>اختصار التشغيل / الإيقاف:</span>
+          <span id="cfgStartKey" class="key-slot">Space</span>
+        </div>
+        <div class="config-row">
+          <span>اختصار التصفير (Reset):</span>
+          <span id="cfgResetKey" class="key-slot">R</span>
+        </div>
+        <div style="font-size:9px;color:#64748b;text-align:center;margin-top:4px">اضغط على المربع ثم اختر الزر من الكيبورد</div>
+      </div>
+
+      <div class="chrono-modes">
+        <button id="chronoModeTimer" class="mode-pill active">Timer</button>
+        <button id="chronoModeHold" class="mode-pill">Hold 2:00</button>
+      </div>
+    </div>
+
+    <div class="hud-input-bar">
+      <input id="hudSearchInput" class="hud-search" placeholder="بحث ب أختصار الكاند..." autocomplete="off" autofocus />
+      <div id="hudAutoBadge" class="hud-autotag">⚡ Auto</div>
+    </div>
+
+    <div id="hudStreamContainer" class="hud-stream"></div>
+    <div id="hudAlertToast" class="hud-toast">تم النسخ ⚡</div>
+  </body>
+  </html>
+`;
+
+/* وضع العائم المدمج بدون أي نوافذ خارجية (Smart In-Page Dock) */
+inPageDockBtn.addEventListener('click', ()=>{
+  inPageDock.classList.add('active');
+  const doc = dockFrame.contentDocument || dockFrame.contentWindow.document;
+  doc.open();
+  doc.write(getHudTemplate());
+  doc.close();
+  initHudEngine(dockFrame.contentWindow);
+});
+dockCloseBtn.addEventListener('click', ()=> inPageDock.classList.remove('active'));
+
+/* تشغيل النافذة الخارجية المنفصلة */
+dockModeBtn.addEventListener('click', async ()=>{
+  const hudHTML = getHudTemplate();
+
+  if ('documentPictureInPicture' in window) {
+    try {
+      const pipWin = await window.documentPictureInPicture.requestWindow({
+        width: 320,
+        height: 480,
+      });
+      pipWin.document.write(hudHTML);
+      pipWin.document.close();
+      initHudEngine(pipWin);
+      return;
+    } catch(err) {
+      console.warn("PiP API blocked:", err);
+    }
+  }
+
+  const popWin = window.open('', 'Canned_Lite_HUD', 'width=320,height=480,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+  if(popWin){
+    popWin.document.write(hudHTML);
+    popWin.document.close();
+    initHudEngine(popWin);
+  } else {
+    alert('يرجى السماح بالنوافذ المنبثقة (Popups).');
+  }
+});
+
+function initHudEngine(win){
+  const d = win.document;
+  const chronoDigits = d.getElementById('chronoDigits');
+  const chronoMainAction = d.getElementById('chronoMainAction');
+  const chronoSnapAction = d.getElementById('chronoSnapAction');
+  const chronoGear = d.getElementById('chronoGear');
+  const configView = d.getElementById('configView');
+  const cfgStartKey = d.getElementById('cfgStartKey');
+  const cfgResetKey = d.getElementById('cfgResetKey');
+  const chronoModeTimer = d.getElementById('chronoModeTimer');
+  const chronoModeHold = d.getElementById('chronoModeHold');
+  const hudSearchInput = d.getElementById('hudSearchInput');
+  const hudAutoBadge = d.getElementById('hudAutoBadge');
+  const hudStreamContainer = d.getElementById('hudStreamContainer');
+  const hudAlertToast = d.getElementById('hudAlertToast');
+
+  let mode = 'timer';
+  let isTicking = false;
+  let elapsed = 0;
+  let remaining = 120 * 1000;
+  let tickRef = null;
+  let lastTimestamp = 0;
+  let localAuto = AUTO_COPY_ACTIVE;
+  let hudDebounce = null;
+  let targetDirHandle = null;
+
+  function formatKeyLabel(code){
+    if(code === 'Space') return 'Space';
+    return code.replace('Key','').replace('Digit','');
+  }
+
+  cfgStartKey.innerText = formatKeyLabel(TIMER_BINDINGS.start);
+  cfgResetKey.innerText = formatKeyLabel(TIMER_BINDINGS.reset);
+
+  chronoGear.addEventListener('click', ()=>{
+    configView.style.display = configView.style.display === 'block' ? 'none' : 'block';
+  });
+
+  function bindInputKey(element, keyProp){
+    element.addEventListener('click', ()=>{
+      element.innerText = 'اضغط زراً...';
+      const handler = (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        TIMER_BINDINGS[keyProp] = e.code;
+        element.innerText = formatKeyLabel(e.code);
+        syncStorage();
+        triggerHudToast('تم حفظ الزر ✅');
+        win.removeEventListener('keydown', handler, true);
+      };
+      win.addEventListener('keydown', handler, true);
+    });
+  }
+  bindInputKey(cfgStartKey, 'start');
+  bindInputKey(cfgResetKey, 'reset');
+
+  function renderClock(){
+    const currentMs = mode === 'timer' ? elapsed : remaining;
+    const totalSecs = Math.floor(currentMs / 1000);
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+
+    chronoDigits.innerHTML = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+    if(mode === 'hold' && remaining <= 15000 && remaining > 0){
+      chronoDigits.classList.add('alert');
+    } else {
+      chronoDigits.classList.remove('alert');
+    }
+  }
+
+  function startChrono(){
+    if(isTicking) return;
+    isTicking = true;
+    chronoMainAction.innerText = 'إيقاف ⏸';
+    chronoMainAction.className = 'hud-btn halt';
+    lastTimestamp = performance.now();
+
+    tickRef = win.setInterval(()=>{
+      const now = performance.now();
+      const delta = now - lastTimestamp;
+      lastTimestamp = now;
+
+      if(mode === 'timer'){
+        elapsed += delta;
+        renderClock();
+      } else {
+        remaining -= delta;
+        if(remaining <= 0){
+          remaining = 0;
+          resetChrono();
+          triggerHudToast('انتهت مهلة الـ Hold 🔔');
+        } else {
+          renderClock();
+        }
+      }
+    }, 200);
+  }
+
+  function pauseChrono(){
+    isTicking = false;
+    win.clearInterval(tickRef);
+    chronoMainAction.innerText = 'استئناف ▶';
+    chronoMainAction.className = 'hud-btn run';
+  }
+
+  function resetChrono(){
+    isTicking = false;
+    win.clearInterval(tickRef);
+    elapsed = 0;
+    remaining = 120 * 1000;
+    chronoMainAction.innerText = 'Start ▶';
+    chronoMainAction.className = 'hud-btn run';
+    renderClock();
+  }
+
+  function toggleChrono(){
+    if(isTicking) pauseChrono(); else startChrono();
+  }
+
+  chronoMainAction.addEventListener('click', toggleChrono);
+
+  /* تصوير الشاشة */
+  chronoSnapAction.addEventListener('click', async ()=>{
+    try {
+      if (!targetDirHandle && ('showDirectoryPicker' in win || 'showDirectoryPicker' in window)) {
+        const picker = win.showDirectoryPicker || window.showDirectoryPicker;
+        triggerHudToast('اختر مجلد Attach من سطح المكتب 📁');
+        targetDirHandle = await picker({ id: 'attach_folder', mode: 'readwrite' });
+      }
+
+      const stream = await win.navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
+      const track = stream.getVideoTracks()[0];
+      const imageCapture = new ImageCapture(track);
+      const bitmap = await imageCapture.grabFrame();
+      track.stop();
+
+      const canvas = d.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0);
+
+      canvas.toBlob(async (blob)=>{
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const fileName = `Screenshot_${timestamp}.jpg`;
+
+        if (targetDirHandle) {
+          try {
+            const fileHandle = await targetDirHandle.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            triggerHudToast('تم الحفظ داخل Attach بنجاح ✅');
+            return;
+          } catch(writeErr){}
+        }
+
+        const link = d.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        triggerHudToast('تم تنزيل الصورة JPG 📸');
+      }, 'image/jpeg', 0.92);
+
+    } catch(err){}
+  });
+
+  chronoModeTimer.addEventListener('click', ()=>{
+    if(mode === 'timer') return;
+    mode = 'timer';
+    chronoModeTimer.classList.add('active');
+    chronoModeHold.classList.remove('active');
+    resetChrono();
+  });
+
+  chronoModeHold.addEventListener('click', ()=>{
+    if(mode === 'hold') return;
+    mode = 'hold';
+    chronoModeHold.classList.add('active');
+    chronoModeTimer.classList.remove('active');
+    resetChrono();
+  });
+
+  win.addEventListener('keydown', (e)=>{
+    if(d.activeElement === hudSearchInput && e.code !== 'Escape') return;
+    if(e.code === TIMER_BINDINGS.start){
+      e.preventDefault();
+      toggleChrono();
+    } else if(e.code === TIMER_BINDINGS.reset){
+      e.preventDefault();
+      resetChrono();
+    }
+  });
+
+  function syncHudAutoBadge(){
+    hudAutoBadge.className = 'hud-autotag ' + (localAuto ? '' : 'off');
+    hudAutoBadge.innerText = localAuto ? '⚡ Auto' : '✋ يدوي';
+  }
+  syncHudAutoBadge();
+
+  hudAutoBadge.addEventListener('click', ()=>{
+    localAuto = !localAuto;
+    AUTO_COPY_ACTIVE = localAuto;
+    syncHudAutoBadge();
+    updateAutoCopyButtonState();
+    syncStorage();
+  });
+
+  function triggerHudToast(msg){
+    hudAlertToast.innerText = msg;
+    hudAlertToast.style.display = 'block';
+    setTimeout(()=> hudAlertToast.style.display = 'none', 1400);
+  }
+
+  async function copyFromHud(text, label){
+    try {
+      await win.navigator.clipboard.writeText(text);
+      triggerHudToast(label || 'تم النسخ بنجاح');
+    } catch(e){
+      const t = d.createElement('textarea');
+      t.value = text;
+      d.body.appendChild(t);
+      t.select();
+      d.execCommand('copy');
+      d.body.removeChild(t);
+      triggerHudToast(label || 'تم النسخ بنجاح');
+    }
+  }
+
+  function renderHudStream(list){
+    hudStreamContainer.innerHTML = '';
+    list.slice(0, 35).forEach(item => {
+      const card = d.createElement('div');
+      card.className = 'hud-item';
+      card.innerHTML = `
+        <div class="item-head">
+          <span class="item-kw">#${escapeEntities(item.keyword)}</span>
+          <button class="item-clip">نسخ</button>
+        </div>
+        <div class="item-snippet">${escapeEntities(item.text)}</div>
+      `;
+      card.addEventListener('click', ()=> copyFromHud(item.text, `تم نسخ: ${item.keyword}`));
+      card.querySelector('.item-clip').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        copyFromHud(item.text, `تم نسخ: ${item.keyword}`);
+      });
+      hudStreamContainer.appendChild(card);
+    });
+  }
+
+  renderHudStream(CANNED_STORE);
+
+  hudSearchInput.addEventListener('input', ()=>{
+    if(hudDebounce) clearTimeout(hudDebounce);
+
+    const val = hudSearchInput.value.trim().toLowerCase();
+    if(!val){
+      renderHudStream(CANNED_STORE);
+      return;
+    }
+
+    const filtered = CANNED_STORE.filter(i => i.keyword.toLowerCase().includes(val));
+    renderHudStream(filtered);
+
+    if(localAuto){
+      hudDebounce = setTimeout(()=>{
+        const match = CANNED_STORE.find(i => i.keyword.toLowerCase() === val);
+        if(match){
+          copyFromHud(match.text, `⚡ تم نسخ: ${match.keyword}`);
+          hudSearchInput.select();
+        }
+      }, 500);
+    }
+  });
+
+  hudSearchInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){
+      const val = hudSearchInput.value.trim().toLowerCase();
+      const match = CANNED_STORE.find(i => i.keyword.toLowerCase() === val);
+      if(match){
+        if(hudDebounce) clearTimeout(hudDebounce);
+        copyFromHud(match.text, `⚡ تم نسخ: ${match.keyword}`);
+        hudSearchInput.select();
+      }
+    }
+  });
+}
+
+runFilter();
+</script>
+</body>
+</html>
