@@ -579,7 +579,7 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD + CAFFEINE (Screen Wake Lock API)
+   COMPACT HUD + DIRECT RESET ON STOP
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
@@ -593,8 +593,8 @@ const hudTemplateMarkup = `
       </div>
     </div>
     <div id="configView" class="config-view">
-      <div class="config-row"><span>تشغيل/إيقاف:</span><span id="cfgStartKey" class="key-slot">Space</span></div>
-      <div class="config-row"><span>تصفير:</span><span id="cfgResetKey" class="key-slot">R</span></div>
+      <div class="config-row"><span>تشغيل/تصفير:</span><span id="cfgStartKey" class="key-slot">Space</span></div>
+      <div class="config-row"><span>تصفير فوري:</span><span id="cfgResetKey" class="key-slot">R</span></div>
     </div>
   </div>
   <div class="hud-input-bar">
@@ -654,7 +654,7 @@ const hudStyles = `
     transition: all 0.15s;
   }
   .hud-btn.run { background: #00ffaa; color: #021a11; }
-  .hud-btn.halt { background: #ff0055; }
+  .hud-btn.halt { background: #ff0055; color: #fff; }
   .hud-btn.snap { background: #3b82f6; }
   .hud-btn.awake { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
   .hud-btn.awake.active { 
@@ -731,7 +731,7 @@ function initHudEngine(win){
   let hudDebounce = null;
   let targetDirHandle = null;
 
-  /* منطق منع قفل وسكون الجهاز (Caffeine / Wake Lock) */
+  /* Caffeine Mode */
   let wakeLockSentinel = null;
 
   async function toggleAwakeMode(){
@@ -740,7 +740,7 @@ function initHudEngine(win){
         try {
           wakeLockSentinel = await navigator.wakeLock.request('screen');
           chronoAwakeAction.classList.add('active');
-          triggerHudToast('☕ Caffeine: Sleep Mode on');
+          triggerHudToast('☕ Caffeine: الجهاز لن ينام');
           
           wakeLockSentinel.addEventListener('release', ()=>{
             wakeLockSentinel = null;
@@ -762,7 +762,6 @@ function initHudEngine(win){
 
   chronoAwakeAction.addEventListener('click', toggleAwakeMode);
 
-  // تحرير الـ Lock تلقائياً عند إغلاق النافذة العائمة
   win.addEventListener('unload', ()=>{
     if(wakeLockSentinel) wakeLockSentinel.release();
   });
@@ -808,7 +807,7 @@ function initHudEngine(win){
   function startChrono(){
     if(isTicking) return;
     isTicking = true;
-    chronoMainAction.innerText = 'إيقاف ⏸';
+    chronoMainAction.innerText = 'إيقاف وتصفير ⏹';
     chronoMainAction.className = 'hud-btn halt';
     lastTimestamp = performance.now();
     tickRef = win.setInterval(()=>{
@@ -824,13 +823,6 @@ function initHudEngine(win){
     }, 200);
   }
 
-  function pauseChrono(){
-    isTicking = false;
-    win.clearInterval(tickRef);
-    chronoMainAction.innerText = 'استئناف ▶';
-    chronoMainAction.className = 'hud-btn run';
-  }
-
   function resetChrono(){
     isTicking = false;
     win.clearInterval(tickRef);
@@ -841,7 +833,14 @@ function initHudEngine(win){
     renderClock();
   }
 
-  function toggleChrono(){ if(isTicking) pauseChrono(); else startChrono(); }
+  // التعديل: عند الإيقاف يتم التصفير مباشرة دون استئناف
+  function toggleChrono(){
+    if(isTicking){
+      resetChrono();
+    } else {
+      startChrono();
+    }
+  }
   chronoMainAction.addEventListener('click', toggleChrono);
 
   chronoDigits.addEventListener('click', ()=>{
@@ -890,8 +889,13 @@ function initHudEngine(win){
 
   win.addEventListener('keydown', (e)=>{
     if(d.activeElement === hudSearchInput && e.code !== 'Escape') return;
-    if(e.code === TIMER_BINDINGS.start){ e.preventDefault(); toggleChrono(); }
-    else if(e.code === TIMER_BINDINGS.reset){ e.preventDefault(); resetChrono(); }
+    if(e.code === TIMER_BINDINGS.start){ 
+      e.preventDefault(); 
+      toggleChrono(); 
+    } else if(e.code === TIMER_BINDINGS.reset){ 
+      e.preventDefault(); 
+      resetChrono(); 
+    }
   });
 
   hudAutoBadge.addEventListener('click', ()=>{
