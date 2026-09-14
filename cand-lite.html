@@ -579,7 +579,7 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD + PERSISTENT CAFFEINE WAKE ENGINE
+   COMPACT HUD + ROBUST BACKGROUND KEEP-AWAKE ENGINE
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
@@ -603,6 +603,7 @@ const hudTemplateMarkup = `
   </div>
   <div id="hudStreamContainer" class="hud-stream"></div>
   <div id="hudAlertToast" class="hud-toast">تم النسخ ⚡</div>
+  <video id="keepAwakeVideo" loop muted playsinline style="display:none; width:1px; height:1px; opacity:0; pointer-events:none;"></video>
 `;
 
 const hudStyles = `
@@ -661,21 +662,22 @@ const hudStyles = `
   .hud-btn.awake { 
     background: #162030; 
     color: #94a3b8; 
-    width: 26px; 
+    width: 25px; 
     height: 24px; 
     padding: 0; 
-    font-size: 13px;
+    font-size: 12px;
   }
   .hud-btn.gear {
     background: #162030; 
     width: 24px; 
     height: 24px; 
     padding: 0; 
-    font-size: 12px;
+    font-size: 11px;
   }
   .hud-btn.awake.active { 
     background: #ff9800; 
-    box-shadow: 0 0 10px rgba(255, 152, 0, 0.5); 
+    color: #000;
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.6); 
   }
 
   .config-view { display: none; background: #080b12; border: 1px solid #1a2536; border-radius: 6px; padding: 4px 6px; margin-top: 4px; font-size: 10.5px; }
@@ -734,6 +736,7 @@ function initHudEngine(win){
   const hudAutoBadge = d.getElementById('hudAutoBadge');
   const hudStreamContainer = d.getElementById('hudStreamContainer');
   const hudAlertToast = d.getElementById('hudAlertToast');
+  const keepAwakeVideo = d.getElementById('keepAwakeVideo');
 
   let mode = 'timer';
   let isTicking = false;
@@ -745,24 +748,29 @@ function initHudEngine(win){
   let hudDebounce = null;
   let targetDirHandle = null;
 
-  /* Caffeine Mode - مانع سكون دائم ومستمر حتى عند تغيير التاب */
+  /* أقوى محرك لمنع نوم الجهاز داخل المتصفح (WakeLock + Canvas Stream Video) */
   let isAwakeActive = false;
   let wakeLockSentinel = null;
-  let silentAudio = null;
 
-  function createSilentAudio(){
-    try {
-      const audioCtx = new (win.AudioContext || win.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      gain.gain.value = 0.00001; // صوت صامت تماماً
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      return audioCtx;
-    } catch(e){
-      return null;
-    }
+  function generateAwakeStream(){
+    const canvas = d.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    let toggle = false;
+
+    // رسم بكسل يتغير لونه باستمرار لفرض وجود حركة فيديو حقيقية تفهمها كروت الشاشة وإدارة طاقة ويندوز
+    const streamInterval = win.setInterval(()=>{
+      if(!isAwakeActive){
+        win.clearInterval(streamInterval);
+        return;
+      }
+      toggle = !toggle;
+      ctx.fillStyle = toggle ? '#000000' : '#010101';
+      ctx.fillRect(0, 0, 1, 1);
+    }, 1000);
+
+    return canvas.captureStream(2);
   }
 
   async function requestWakeLockSafely(){
@@ -773,7 +781,6 @@ function initHudEngine(win){
         wakeLockSentinel.addEventListener('release', ()=>{
           wakeLockSentinel = null;
           if(isAwakeActive){
-            // إعادة التفعيل فوراً عند عودة الصفحة للعمل
             setTimeout(requestWakeLockSafely, 1000);
           }
         });
@@ -785,26 +792,36 @@ function initHudEngine(win){
     isAwakeActive = !isAwakeActive;
     if(isAwakeActive){
       chronoAwakeAction.classList.add('active');
-      triggerHudToast('☕ Caffeine مفعّل: الجهاز لن ينام');
+      triggerHudToast('☕ Caffeine مفعّل: الجهاز لن ينام أبداً');
+
+      // 1. تشغيل الفيديو الصامت الحي
+      try {
+        keepAwakeVideo.srcObject = generateAwakeStream();
+        await keepAwakeVideo.play();
+      } catch(e){}
+
+      // 2. تفعيل قفل الشاشة البرمجي
       await requestWakeLockSafely();
-      if(!silentAudio) silentAudio = createSilentAudio();
+
     } else {
       chronoAwakeAction.classList.remove('active');
       triggerHudToast('تم إيقاف Caffeine 💤');
+
       if(wakeLockSentinel){
         try { await wakeLockSentinel.release(); } catch(e){}
         wakeLockSentinel = null;
       }
-      if(silentAudio){
-        try { silentAudio.close(); } catch(e){}
-        silentAudio = null;
-      }
+
+      try {
+        keepAwakeVideo.pause();
+        keepAwakeVideo.srcObject = null;
+      } catch(e){}
     }
   }
 
   chronoAwakeAction.addEventListener('click', toggleAwakeMode);
 
-  // إعادة التفعيل المستمر إذا فُصل أثناء تغيير التاب
+  // استعادة القفل دوماً في الخلفية أو عند العودة
   win.document.addEventListener('visibilitychange', ()=>{
     if(isAwakeActive && win.document.visibilityState === 'visible'){
       requestWakeLockSafely();
@@ -814,7 +831,6 @@ function initHudEngine(win){
   win.addEventListener('unload', ()=>{
     isAwakeActive = false;
     if(wakeLockSentinel) wakeLockSentinel.release();
-    if(silentAudio) silentAudio.close();
   });
 
   function formatKeyLabel(code){
