@@ -579,7 +579,7 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD (تصميم فائق النحافة بدون صف أزرار زائدة)
+   COMPACT HUD + CAFFEINE (Screen Wake Lock API)
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
@@ -588,6 +588,7 @@ const hudTemplateMarkup = `
       <div class="chrono-controls">
         <button id="chronoMainAction" class="hud-btn run">Start ▶</button>
         <button id="chronoSnapAction" class="hud-btn snap" title="التقاط الشاشة">📸</button>
+        <button id="chronoAwakeAction" class="hud-btn awake" title="منع الجهاز من النوم (Caffeine Mode)">☕ Awake</button>
         <button id="chronoGear" class="hud-btn">⚙️</button>
       </div>
     </div>
@@ -650,10 +651,18 @@ const hudStyles = `
     padding: 4px 7px; 
     border-radius: 5px; 
     cursor: pointer; 
+    transition: all 0.15s;
   }
   .hud-btn.run { background: #00ffaa; color: #021a11; }
   .hud-btn.halt { background: #ff0055; }
   .hud-btn.snap { background: #3b82f6; }
+  .hud-btn.awake { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+  .hud-btn.awake.active { 
+    background: #ff9800; 
+    color: #000; 
+    border-color: #ff9800; 
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.4); 
+  }
 
   .config-view { display: none; background: #080b12; border: 1px solid #1a2536; border-radius: 6px; padding: 4px 6px; margin-top: 4px; font-size: 10.5px; }
   .config-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
@@ -679,7 +688,7 @@ dockModeBtn.addEventListener('click', async ()=>{
   if ('documentPictureInPicture' in window) {
     try {
       const pipWin = await window.documentPictureInPicture.requestWindow({
-        width: 300,
+        width: 320,
         height: 420,
       });
 
@@ -702,6 +711,7 @@ function initHudEngine(win){
   const chronoDigits = d.getElementById('chronoDigits');
   const chronoMainAction = d.getElementById('chronoMainAction');
   const chronoSnapAction = d.getElementById('chronoSnapAction');
+  const chronoAwakeAction = d.getElementById('chronoAwakeAction');
   const chronoGear = d.getElementById('chronoGear');
   const configView = d.getElementById('configView');
   const cfgStartKey = d.getElementById('cfgStartKey');
@@ -711,7 +721,7 @@ function initHudEngine(win){
   const hudStreamContainer = d.getElementById('hudStreamContainer');
   const hudAlertToast = d.getElementById('hudAlertToast');
 
-  let mode = 'timer'; // 'timer' أو 'hold'
+  let mode = 'timer';
   let isTicking = false;
   let elapsed = 0;
   let remaining = 120 * 1000;
@@ -720,6 +730,42 @@ function initHudEngine(win){
   let localAuto = AUTO_COPY_ACTIVE;
   let hudDebounce = null;
   let targetDirHandle = null;
+
+  /* منطق منع قفل وسكون الجهاز (Caffeine / Wake Lock) */
+  let wakeLockSentinel = null;
+
+  async function toggleAwakeMode(){
+    if('wakeLock' in navigator){
+      if(!wakeLockSentinel){
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          chronoAwakeAction.classList.add('active');
+          triggerHudToast('☕ Caffeine: Sleep Mode on');
+          
+          wakeLockSentinel.addEventListener('release', ()=>{
+            wakeLockSentinel = null;
+            chronoAwakeAction.classList.remove('active');
+          });
+        } catch(err){
+          triggerHudToast('تعذر تفعيل وضع النشاط ❌');
+        }
+      } else {
+        await wakeLockSentinel.release();
+        wakeLockSentinel = null;
+        chronoAwakeAction.classList.remove('active');
+        triggerHudToast('تم تعطيل Caffeine 💤');
+      }
+    } else {
+      triggerHudToast('المتصفح لا يدعم خاصية WakeLock ⚠️');
+    }
+  }
+
+  chronoAwakeAction.addEventListener('click', toggleAwakeMode);
+
+  // تحرير الـ Lock تلقائياً عند إغلاق النافذة العائمة
+  win.addEventListener('unload', ()=>{
+    if(wakeLockSentinel) wakeLockSentinel.release();
+  });
 
   function formatKeyLabel(code){
     return code === 'Space' ? 'Space' : code.replace('Key','').replace('Digit','');
@@ -798,7 +844,6 @@ function initHudEngine(win){
   function toggleChrono(){ if(isTicking) pauseChrono(); else startChrono(); }
   chronoMainAction.addEventListener('click', toggleChrono);
 
-  // النقر على الأرقام يبدل بين التايمر ونظام 2:00
   chronoDigits.addEventListener('click', ()=>{
     mode = mode === 'timer' ? 'hold' : 'timer';
     resetChrono();
