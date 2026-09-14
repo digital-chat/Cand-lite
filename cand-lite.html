@@ -592,13 +592,14 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD (Exact Order: Live Clock -> 📸 -> Start -> 00:00)
+   COMPACT HUD (Live Clock -> 📸 -> ☕ Awake YouTube -> Start -> 00:00)
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
     <div class="chrono-row">
       <div id="liveClock" class="live-clock" title="ساعة الجهاز الفعلية">0:00:00</div>
       <button id="chronoSnapAction" class="hud-btn snap" title="التقاط الشاشة">📸</button>
+      <button id="chronoAwakeAction" class="hud-btn awake" title="تشغيل فيديو بالخلفية لمنع سكون الويندوز (Caffeine)">☕</button>
       <button id="chronoMainAction" class="hud-btn run">▶ Start</button>
       <div id="chronoDigits" class="chrono-digits" title="انقر للتبديل بين التايمر و 2:00">00:00</div>
     </div>
@@ -609,6 +610,7 @@ const hudTemplateMarkup = `
   </div>
   <div id="hudStreamContainer" class="hud-stream"></div>
   <div id="hudAlertToast" class="hud-toast">تم النسخ ⚡</div>
+  <div id="ytContainer" style="display:none; width:1px; height:1px; overflow:hidden;"></div>
 `;
 
 const hudStyles = `
@@ -632,7 +634,7 @@ const hudStyles = `
   }
   .chrono-row { 
     display: flex; 
-    flex-direction: row; /* من اليسار إلى اليمين */
+    flex-direction: row; 
     justify-content: space-between; 
     align-items: center; 
     gap: 4px;
@@ -670,6 +672,19 @@ const hudStyles = `
     flex-shrink: 0;
   }
   .hud-btn.snap { background: #3b82f6; width: 28px; height: 26px; padding: 0; font-size: 13px; }
+  .hud-btn.awake { 
+    background: #162030; 
+    color: #94a3b8; 
+    width: 26px; 
+    height: 26px; 
+    padding: 0; 
+    font-size: 12px;
+  }
+  .hud-btn.awake.active { 
+    background: #ff9800; 
+    color: #000;
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.6); 
+  }
   .hud-btn.run { background: #00ffaa; color: #021a11; }
   .hud-btn.halt { background: #ff0055; color: #fff; }
 
@@ -708,7 +723,7 @@ dockModeBtn.addEventListener('click', async ()=>{
   if ('documentPictureInPicture' in window) {
     try {
       const pipWin = await window.documentPictureInPicture.requestWindow({
-        width: 290,
+        width: 320,
         height: 420,
       });
 
@@ -731,6 +746,8 @@ function initHudEngine(win){
   const chronoDigits = d.getElementById('chronoDigits');
   const chronoMainAction = d.getElementById('chronoMainAction');
   const chronoSnapAction = d.getElementById('chronoSnapAction');
+  const chronoAwakeAction = d.getElementById('chronoAwakeAction');
+  const ytContainer = d.getElementById('ytContainer');
   const liveClock = d.getElementById('liveClock');
   const hudSearchInput = d.getElementById('hudSearchInput');
   const hudAutoBadge = d.getElementById('hudAutoBadge');
@@ -746,6 +763,29 @@ function initHudEngine(win){
   let localAuto = AUTO_COPY_ACTIVE;
   let hudDebounce = null;
   let targetDirHandle = null;
+  let isAwakeActive = false;
+
+  /* تشغيل وتكرار فيديو اليوتيوب الصامت في الخلفية لمنع سكون الجهاز تماماً */
+  function toggleAwakeMode(){
+    isAwakeActive = !isAwakeActive;
+    if(isAwakeActive){
+      chronoAwakeAction.classList.add('active');
+      triggerHudToast('☕ Caffeine مفعّل: تم ربط اليوتيوب بالخلفية');
+      // رابط الـ Embed الخاص بالفيديو مع تكرار مستمر وكتم الصوت وتشغيل ذاتي دون فتح أي تاب
+      ytContainer.innerHTML = `
+        <iframe width="1" height="1" 
+          src="https://www.youtube-nocookie.com/embed/CLcXKy8xoM4?autoplay=1&mute=1&loop=1&playlist=CLcXKy8xoM4&controls=0" 
+          frameborder="0" 
+          allow="autoplay; encrypted-media">
+        </iframe>
+      `;
+    } else {
+      chronoAwakeAction.classList.remove('active');
+      triggerHudToast('تم إيقاف Caffeine 💤');
+      ytContainer.innerHTML = '';
+    }
+  }
+  chronoAwakeAction.addEventListener('click', toggleAwakeMode);
 
   function updateLiveClock(){
     const now = new Date();
@@ -756,7 +796,10 @@ function initHudEngine(win){
   }
   updateLiveClock();
   const clockInterval = win.setInterval(updateLiveClock, 1000);
-  win.addEventListener('unload', ()=> win.clearInterval(clockInterval));
+  win.addEventListener('unload', ()=>{
+    win.clearInterval(clockInterval);
+    ytContainer.innerHTML = '';
+  });
 
   function renderClock(){
     const currentMs = mode === 'timer' ? elapsed : remaining;
