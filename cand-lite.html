@@ -481,7 +481,8 @@ function runFilter(){
         const match = workingSet.find(i => i.keyword.toLowerCase() === rawVal);
         if(match){
           copyPayload(match.text, null, `⚡ تم النسخ: ${match.keyword}`);
-          queryInput.select();
+          queryInput.value = '';
+          runFilter();
         }
       }, 500);
     }
@@ -500,6 +501,20 @@ function runFilter(){
 
 queryInput.addEventListener('input', runFilter);
 queryScope.addEventListener('change', runFilter);
+
+queryInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    const rawVal = queryInput.value.trim().toLowerCase();
+    const match = CANNED_STORE.find(i => i.keyword.toLowerCase() === rawVal);
+    if(match){
+      if(globalDebounce) clearTimeout(globalDebounce);
+      copyPayload(match.text, null, `⚡ تم النسخ: ${match.keyword}`);
+      queryInput.value = '';
+      runFilter();
+    }
+  }
+});
+
 queryReset.addEventListener('click', ()=>{ queryInput.value = ''; runFilter(); });
 
 /* Excel Import */
@@ -579,7 +594,7 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD + ROBUST BACKGROUND KEEP-AWAKE ENGINE
+   COMPACT HUD + AUTO-CLEAR INPUT ON COPY
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
@@ -748,7 +763,7 @@ function initHudEngine(win){
   let hudDebounce = null;
   let targetDirHandle = null;
 
-  /* أقوى محرك لمنع نوم الجهاز داخل المتصفح (WakeLock + Canvas Stream Video) */
+  /* Caffeine Mode */
   let isAwakeActive = false;
   let wakeLockSentinel = null;
 
@@ -759,7 +774,6 @@ function initHudEngine(win){
     const ctx = canvas.getContext('2d');
     let toggle = false;
 
-    // رسم بكسل يتغير لونه باستمرار لفرض وجود حركة فيديو حقيقية تفهمها كروت الشاشة وإدارة طاقة ويندوز
     const streamInterval = win.setInterval(()=>{
       if(!isAwakeActive){
         win.clearInterval(streamInterval);
@@ -792,15 +806,13 @@ function initHudEngine(win){
     isAwakeActive = !isAwakeActive;
     if(isAwakeActive){
       chronoAwakeAction.classList.add('active');
-      triggerHudToast('☕ Caffeine مفعّل: الجهاز لن ينام أبداً');
+      triggerHudToast('☕ Caffeine: لن ينام الجهاز');
 
-      // 1. تشغيل الفيديو الصامت الحي
       try {
         keepAwakeVideo.srcObject = generateAwakeStream();
         await keepAwakeVideo.play();
       } catch(e){}
 
-      // 2. تفعيل قفل الشاشة البرمجي
       await requestWakeLockSafely();
 
     } else {
@@ -821,7 +833,6 @@ function initHudEngine(win){
 
   chronoAwakeAction.addEventListener('click', toggleAwakeMode);
 
-  // استعادة القفل دوماً في الخلفية أو عند العودة
   win.document.addEventListener('visibilitychange', ()=>{
     if(isAwakeActive && win.document.visibilityState === 'visible'){
       requestWakeLockSafely();
@@ -998,10 +1009,16 @@ function initHudEngine(win){
         </div>
         <div class="item-snippet">${escapeEntities(item.text)}</div>
       `;
-      card.addEventListener('click', ()=> copyFromHud(item.text, `تم نسخ: ${item.keyword}`));
+      card.addEventListener('click', ()=>{
+        copyFromHud(item.text, `تم نسخ: ${item.keyword}`);
+        hudSearchInput.value = '';
+        renderHudStream(CANNED_STORE);
+      });
       card.querySelector('.item-clip').addEventListener('click', (e)=>{
         e.stopPropagation();
         copyFromHud(item.text, `تم نسخ: ${item.keyword}`);
+        hudSearchInput.value = '';
+        renderHudStream(CANNED_STORE);
       });
       hudStreamContainer.appendChild(card);
     });
@@ -1022,7 +1039,8 @@ function initHudEngine(win){
         const match = CANNED_STORE.find(i => i.keyword.toLowerCase() === val);
         if(match){
           copyFromHud(match.text, `⚡ تم نسخ: ${match.keyword}`);
-          hudSearchInput.select();
+          hudSearchInput.value = '';
+          renderHudStream(CANNED_STORE);
         }
       }, 500);
     }
@@ -1035,7 +1053,8 @@ function initHudEngine(win){
       if(match){
         if(hudDebounce) clearTimeout(hudDebounce);
         copyFromHud(match.text, `⚡ تم نسخ: ${match.keyword}`);
-        hudSearchInput.select();
+        hudSearchInput.value = '';
+        renderHudStream(CANNED_STORE);
       }
     }
   });
