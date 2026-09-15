@@ -592,15 +592,15 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD (Live Clock -> 📸 -> 2:00 -> Stopwatch 00:00)
+   COMPACT HUD (Live Clock -> 📸 -> ⏳ 2:00 -> Stopwatch 00:00)
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
     <div class="chrono-row">
       <div id="liveClock" class="live-clock" title="ساعة الجهاز الفعلية">0:00:00</div>
       <button id="chronoSnapAction" class="hud-btn snap" title="التقاط الشاشة">📸</button>
-      <button id="chronoHoldAction" class="hud-btn run">⏳ Hold 2:00</button>
-      <div id="chronoDigits" class="chrono-digits" title="انقر للبدء/التصفير (Stopwatch)">00:00</div>
+      <button id="chronoHoldAction" class="hud-btn hold-btn" title="بدء / تصفير (2:00)">⏳ 2:00</button>
+      <div id="chronoDigits" class="chrono-digits" title="انقر للبدء / التصفير (Stopwatch)">00:00</div>
     </div>
   </div>
   <div class="hud-input-bar">
@@ -632,7 +632,7 @@ const hudStyles = `
   }
   .chrono-row { 
     display: flex; 
-    flex-direction: row; /* من اليسار لليمين */
+    flex-direction: row; 
     justify-content: space-between; 
     align-items: center; 
     gap: 4px;
@@ -640,12 +640,12 @@ const hudStyles = `
   
   .live-clock {
     font-family: monospace;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     color: #00e5ff;
     background: #162030;
     border: 1px solid #1e293b;
-    padding: 4px 6px;
+    padding: 4px 5px;
     border-radius: 5px;
     white-space: nowrap;
     line-height: 1.2;
@@ -659,7 +659,6 @@ const hudStyles = `
     color: #000; 
     font-size: 11px; 
     font-weight: 700; 
-    padding: 5px 8px; 
     border-radius: 5px; 
     cursor: pointer; 
     transition: all 0.15s;
@@ -669,9 +668,29 @@ const hudStyles = `
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .hud-btn.snap { background: #3b82f6; width: 28px; height: 26px; padding: 0; font-size: 13px; }
-  .hud-btn.run { background: #00ffaa; color: #021a11; }
-  .hud-btn.halt { background: #ff0055; color: #fff; }
+  .hud-btn.snap { background: #3b82f6; width: 26px; height: 26px; padding: 0; font-size: 13px; }
+  
+  /* زر الـ 2:00 المدمج بدون كلمة Hold */
+  .hud-btn.hold-btn { 
+    background: #00ffaa; 
+    color: #021a11; 
+    height: 26px; 
+    padding: 0 6px; 
+    font-size: 11px; 
+    font-family: monospace;
+    font-weight: 800;
+  }
+  .hud-btn.hold-btn.running {
+    background: #162030;
+    color: #00ffaa;
+    border: 1px solid #00ffaa;
+  }
+  .hud-btn.hold-btn.halt { 
+    background: #ff0055 !important; 
+    color: #fff !important; 
+    border-color: #ff0055 !important;
+    animation: blinker 0.6s infinite alternate;
+  }
 
   .chrono-digits { 
     font-family: monospace; 
@@ -687,7 +706,6 @@ const hudStyles = `
   }
   .chrono-digits:hover { background: rgba(0, 229, 255, 0.15); }
   .chrono-digits.active { color: #00ffaa; text-shadow: 0 0 10px rgba(0, 255, 170, 0.4); }
-  .chrono-digits.alert { color: #ff0055; animation: blinker 0.6s infinite alternate; }
   @keyframes blinker { from { opacity: 1; } to { opacity: 0.6; } }
 
   .hud-input-bar { display: flex; flex-direction: row-reverse; gap: 4px; position: sticky; top: 0; background: #06080d; padding-bottom: 4px; z-index: 20; }
@@ -710,7 +728,7 @@ dockModeBtn.addEventListener('click', async ()=>{
   if ('documentPictureInPicture' in window) {
     try {
       const pipWin = await window.documentPictureInPicture.requestWindow({
-        width: 300,
+        width: 270,
         height: 420,
       });
 
@@ -778,7 +796,6 @@ function initHudEngine(win){
   function startStopwatch(){
     stopwatchRunning = true;
     chronoDigits.classList.add('active');
-    chronoDigits.classList.remove('alert');
     stopwatchStartTime = performance.now();
     stopwatchInterval = win.setInterval(()=>{
       const now = performance.now();
@@ -796,7 +813,6 @@ function initHudEngine(win){
     renderStopwatch();
   }
 
-  // الضغط بالماوس على أرقام التايمر يبدأ العد التصاعدي فوراً، أو يصفّره
   chronoDigits.addEventListener('click', ()=>{
     if(stopwatchRunning){
       resetStopwatch();
@@ -816,8 +832,9 @@ function initHudEngine(win){
 
   function startHold(){
     holdRunning = true;
-    chronoHoldAction.className = 'hud-btn halt';
+    chronoHoldAction.className = 'hud-btn hold-btn running';
     holdStartTime = performance.now();
+    renderHoldUI();
     holdInterval = win.setInterval(()=>{
       const now = performance.now();
       holdRemaining -= (now - holdStartTime);
@@ -837,18 +854,17 @@ function initHudEngine(win){
     holdRunning = false;
     win.clearInterval(holdInterval);
     holdRemaining = 120 * 1000;
-    chronoHoldAction.className = 'hud-btn run';
-    chronoHoldAction.innerText = '⏳ Hold 2:00';
+    chronoHoldAction.className = 'hud-btn hold-btn';
+    chronoHoldAction.innerText = '⏳ 2:00';
   }
 
-  // الضغط على زر الهولد 2:00
   chronoHoldAction.addEventListener('click', ()=>{
     if(holdRunning){
       resetHold();
-      triggerHudToast('تم تصفير الهولد ⏹');
+      triggerHudToast('تم تصفير الـ 2:00 ⏹');
     } else {
       startHold();
-      triggerHudToast('بدء عداد الهولد التنازلي (2:00) ⏳');
+      triggerHudToast('بدء العد التنازلي (2:00) ⏳');
     }
   });
 
