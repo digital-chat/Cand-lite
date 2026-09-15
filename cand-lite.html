@@ -670,7 +670,6 @@ const hudStyles = `
   }
   .hud-btn.snap { background: #3b82f6; width: 26px; height: 26px; padding: 0; font-size: 13px; }
   
-  /* زر الـ 2:00 المدمج بدون كلمة Hold */
   .hud-btn.hold-btn { 
     background: #00ffaa; 
     color: #021a11; 
@@ -816,10 +815,8 @@ function initHudEngine(win){
   chronoDigits.addEventListener('click', ()=>{
     if(stopwatchRunning){
       resetStopwatch();
-      triggerHudToast('تم تصفير التايمر ⏹');
     } else {
       startStopwatch();
-      triggerHudToast('بدء العداد التصاعدي ⏱');
     }
   });
 
@@ -843,7 +840,6 @@ function initHudEngine(win){
       if(holdRemaining <= 0){
         holdRemaining = 0;
         resetHold();
-        triggerHudToast('انتهى وقت الهولد (2:00) 🔔');
       } else {
         renderHoldUI();
       }
@@ -861,10 +857,8 @@ function initHudEngine(win){
   chronoHoldAction.addEventListener('click', ()=>{
     if(holdRunning){
       resetHold();
-      triggerHudToast('تم تصفير الـ 2:00 ⏹');
     } else {
       startHold();
-      triggerHudToast('بدء العد التنازلي (2:00) ⏳');
     }
   });
 
