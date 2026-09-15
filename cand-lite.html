@@ -592,15 +592,15 @@ document.getElementById('wipeAllBtn').addEventListener('click', ()=>{
 });
 
 /* =================================================================
-   COMPACT HUD (Exact Order: Live Clock -> 📸 -> Start -> 00:00)
+   COMPACT HUD (Live Clock -> 📸 -> Hold 2:00 -> Stopwatch 00:00)
    ================================================================= */
 const hudTemplateMarkup = `
   <div class="chrono-box">
     <div class="chrono-row">
       <div id="liveClock" class="live-clock" title="ساعة الجهاز الفعلية">0:00:00</div>
       <button id="chronoSnapAction" class="hud-btn snap" title="التقاط الشاشة">📸</button>
-      <button id="chronoMainAction" class="hud-btn run">▶ Start</button>
-      <div id="chronoDigits" class="chrono-digits" title="انقر للتبديل بين التايمر و 2:00">00:00</div>
+      <button id="chronoHoldAction" class="hud-btn run">⏳ Hold 2:00</button>
+      <div id="chronoDigits" class="chrono-digits" title="انقر للبدء/التصفير (Stopwatch)">00:00</div>
     </div>
   </div>
   <div class="hud-input-bar">
@@ -632,7 +632,7 @@ const hudStyles = `
   }
   .chrono-row { 
     display: flex; 
-    flex-direction: row; /* من اليسار إلى اليمين */
+    flex-direction: row; /* من اليسار لليمين */
     justify-content: space-between; 
     align-items: center; 
     gap: 4px;
@@ -683,8 +683,10 @@ const hudStyles = `
     padding: 2px 4px;
     border-radius: 4px;
     flex-shrink: 0;
+    transition: all 0.15s;
   }
-  .chrono-digits:hover { background: rgba(0, 229, 255, 0.1); }
+  .chrono-digits:hover { background: rgba(0, 229, 255, 0.15); }
+  .chrono-digits.active { color: #00ffaa; text-shadow: 0 0 10px rgba(0, 255, 170, 0.4); }
   .chrono-digits.alert { color: #ff0055; animation: blinker 0.6s infinite alternate; }
   @keyframes blinker { from { opacity: 1; } to { opacity: 0.6; } }
 
@@ -708,7 +710,7 @@ dockModeBtn.addEventListener('click', async ()=>{
   if ('documentPictureInPicture' in window) {
     try {
       const pipWin = await window.documentPictureInPicture.requestWindow({
-        width: 290,
+        width: 300,
         height: 420,
       });
 
@@ -729,7 +731,7 @@ dockModeBtn.addEventListener('click', async ()=>{
 function initHudEngine(win){
   const d = win.document;
   const chronoDigits = d.getElementById('chronoDigits');
-  const chronoMainAction = d.getElementById('chronoMainAction');
+  const chronoHoldAction = d.getElementById('chronoHoldAction');
   const chronoSnapAction = d.getElementById('chronoSnapAction');
   const liveClock = d.getElementById('liveClock');
   const hudSearchInput = d.getElementById('hudSearchInput');
@@ -737,12 +739,16 @@ function initHudEngine(win){
   const hudStreamContainer = d.getElementById('hudStreamContainer');
   const hudAlertToast = d.getElementById('hudAlertToast');
 
-  let mode = 'timer';
-  let isTicking = false;
-  let elapsed = 0;
-  let remaining = 120 * 1000;
-  let tickRef = null;
-  let lastTimestamp = 0;
+  let stopwatchRunning = false;
+  let stopwatchElapsed = 0;
+  let stopwatchInterval = null;
+  let stopwatchStartTime = 0;
+
+  let holdRunning = false;
+  let holdRemaining = 120 * 1000;
+  let holdInterval = null;
+  let holdStartTime = 0;
+
   let localAuto = AUTO_COPY_ACTIVE;
   let hudDebounce = null;
   let targetDirHandle = null;
@@ -758,58 +764,92 @@ function initHudEngine(win){
   const clockInterval = win.setInterval(updateLiveClock, 1000);
   win.addEventListener('unload', ()=> win.clearInterval(clockInterval));
 
-  function renderClock(){
-    const currentMs = mode === 'timer' ? elapsed : remaining;
-    const totalSecs = Math.floor(currentMs / 1000);
+  function formatTime(ms){
+    const totalSecs = Math.floor(ms / 1000);
     const m = Math.floor(totalSecs / 60);
     const s = totalSecs % 60;
-    chronoDigits.innerHTML = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    if(mode === 'hold' && remaining <= 15000 && remaining > 0) chronoDigits.classList.add('alert');
-    else chronoDigits.classList.remove('alert');
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
 
-  function startChrono(){
-    if(isTicking) return;
-    isTicking = true;
-    chronoMainAction.innerText = '⏹ تصفير';
-    chronoMainAction.className = 'hud-btn halt';
-    lastTimestamp = performance.now();
-    tickRef = win.setInterval(()=>{
+  function renderStopwatch(){
+    chronoDigits.innerHTML = formatTime(stopwatchElapsed);
+  }
+
+  function startStopwatch(){
+    stopwatchRunning = true;
+    chronoDigits.classList.add('active');
+    chronoDigits.classList.remove('alert');
+    stopwatchStartTime = performance.now();
+    stopwatchInterval = win.setInterval(()=>{
       const now = performance.now();
-      const delta = now - lastTimestamp;
-      lastTimestamp = now;
-      if(mode === 'timer') elapsed += delta;
-      else {
-        remaining -= delta;
-        if(remaining <= 0){ remaining = 0; resetChrono(); }
-      }
-      renderClock();
+      stopwatchElapsed += (now - stopwatchStartTime);
+      stopwatchStartTime = now;
+      renderStopwatch();
     }, 200);
   }
 
-  function resetChrono(){
-    isTicking = false;
-    win.clearInterval(tickRef);
-    elapsed = 0;
-    remaining = 120 * 1000;
-    chronoMainAction.innerText = '▶ Start';
-    chronoMainAction.className = 'hud-btn run';
-    renderClock();
+  function resetStopwatch(){
+    stopwatchRunning = false;
+    win.clearInterval(stopwatchInterval);
+    stopwatchElapsed = 0;
+    chronoDigits.classList.remove('active');
+    renderStopwatch();
   }
 
-  function toggleChrono(){
-    if(isTicking){
-      resetChrono();
+  // الضغط بالماوس على أرقام التايمر يبدأ العد التصاعدي فوراً، أو يصفّره
+  chronoDigits.addEventListener('click', ()=>{
+    if(stopwatchRunning){
+      resetStopwatch();
+      triggerHudToast('تم تصفير التايمر ⏹');
     } else {
-      startChrono();
+      startStopwatch();
+      triggerHudToast('بدء العداد التصاعدي ⏱');
+    }
+  });
+
+  function renderHoldUI(){
+    chronoHoldAction.innerText = `⏳ ${formatTime(holdRemaining)}`;
+    if(holdRemaining <= 15000 && holdRemaining > 0){
+      chronoHoldAction.classList.add('halt');
     }
   }
-  chronoMainAction.addEventListener('click', toggleChrono);
 
-  chronoDigits.addEventListener('click', ()=>{
-    mode = mode === 'timer' ? 'hold' : 'timer';
-    resetChrono();
-    triggerHudToast(mode === 'timer' ? 'تم تفعيل التايمر ⏱' : 'تم تفعيل Hold (2:00) ⏳');
+  function startHold(){
+    holdRunning = true;
+    chronoHoldAction.className = 'hud-btn halt';
+    holdStartTime = performance.now();
+    holdInterval = win.setInterval(()=>{
+      const now = performance.now();
+      holdRemaining -= (now - holdStartTime);
+      holdStartTime = now;
+
+      if(holdRemaining <= 0){
+        holdRemaining = 0;
+        resetHold();
+        triggerHudToast('انتهى وقت الهولد (2:00) 🔔');
+      } else {
+        renderHoldUI();
+      }
+    }, 200);
+  }
+
+  function resetHold(){
+    holdRunning = false;
+    win.clearInterval(holdInterval);
+    holdRemaining = 120 * 1000;
+    chronoHoldAction.className = 'hud-btn run';
+    chronoHoldAction.innerText = '⏳ Hold 2:00';
+  }
+
+  // الضغط على زر الهولد 2:00
+  chronoHoldAction.addEventListener('click', ()=>{
+    if(holdRunning){
+      resetHold();
+      triggerHudToast('تم تصفير الهولد ⏹');
+    } else {
+      startHold();
+      triggerHudToast('بدء عداد الهولد التنازلي (2:00) ⏳');
+    }
   });
 
   chronoSnapAction.addEventListener('click', async ()=>{
@@ -854,10 +894,11 @@ function initHudEngine(win){
     if(d.activeElement === hudSearchInput && e.code !== 'Escape') return;
     if(e.code === 'Space'){ 
       e.preventDefault(); 
-      toggleChrono(); 
+      if(stopwatchRunning) resetStopwatch(); else startStopwatch();
     } else if(e.code === 'KeyR'){ 
       e.preventDefault(); 
-      resetChrono(); 
+      resetStopwatch();
+      resetHold();
     }
   });
 
